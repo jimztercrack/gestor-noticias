@@ -1,0 +1,47 @@
+/* base.css */
+body {
+    font-family: 'Nunito Sans', sans-serif;
+    background-color: #f4f4f4;
+    color: #333;
+    padding: 20px;
+  }
+  
+  h1 {
+    color: #d10000;
+    margin-bottom: 20px;
+  }
+  
+  .date-filters {
+    display: flex;
+    flex-direction: row;
+    gap: 1rem;
+    margin-bottom: 1rem;
+    margin-left: 25px;
+
+  }
+  
+  .date-filter {
+    display: flex;
+    flex-direction: column;
+    width: 150px; /* Ajusta este valor según tus necesidades */
+  }
+  
+  .date-filter label {
+    font-size: 1rem;
+    margin-bottom: 0.5rem;
+  }
+  
+  .date-filter input[type="date"] {
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    padding: 0.25rem;
+    font-size: 0.9rem;
+    width: 100%;
+    box-sizing: border-box;
+  }
+  
+  .date-filter input[type="date"]::-webkit-calendar-picker-indicator {
+    cursor: pointer;
+  }
+  
+  

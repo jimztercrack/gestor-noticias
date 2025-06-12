@@ -1,0 +1,74 @@
+/* Estilos para el overlay del modal */
+.ReactModal__Overlay {
+  background-color: rgba(0, 0, 0, 0.75) !important; /* Fondo oscuro con transparencia */
+}
+
+/* Estilos para el contenido del modal */
+.ReactModal__Content {
+  top: 50% !important;
+  left: 50% !important;
+  right: auto !important;
+  bottom: auto !important;
+  margin-right: -50% !important;
+  transform: translate(-50%, -50%) !important;
+  width: 400px !important; /* Ajusta el ancho según tus necesidades */
+  padding: 20px !important; /* Ajusta el padding según tus necesidades */
+  border-radius: 10px !important; /* Ajusta el border-radius según tus necesidades */
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3) !important; /* Añade sombra para darle un efecto más elegante */
+  border: none !important; /* Elimina el borde predeterminado */
+}
+
+/* Estilos para los botones del modal */
+button {
+  margin-top: 10px; /* Añade un margen superior a los botones */
+  padding: 10px 15px; /* Ajusta el padding de los botones */
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+button[type="submit"] {
+  background-color: #d10000;
+  color: white;
+  margin-right: 10px; /* Añade margen derecho entre los botones */
+}
+
+button[type="button"] {
+  background-color: grey;
+  color: white;
+}
+
+form {
+  display: flex;
+  flex-direction: column;
+}
+
+form label {
+  margin-top: 10px;
+  font-weight: bold;
+}
+
+form input {
+  margin-top: 5px;
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.last-dolar-info {
+  margin-bottom: 20px;
+  padding: 10px;
+  background-color: #f9f9f9;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+}
+
+.last-dolar-info p {
+  margin: 5px 0;
+}
+
+/* Centrando el título */
+h2 {
+  text-align: center;
+  margin-bottom: 20px; /* Espacio entre el título y la zona gris */
+}

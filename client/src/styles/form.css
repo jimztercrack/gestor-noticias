@@ -1,0 +1,118 @@
+/* form.css */
+.note-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.form-group label {
+  display: block;
+  font-weight: bold;
+  margin-bottom: 5px;
+}
+
+.form-group input[type="text"],
+.form-group textarea {
+  width: 100%;
+  padding: 10px;
+  margin-bottom: 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.form-group textarea {
+  height: 150px;
+  resize: none;  /* Añadido para deshabilitar el redimensionamiento */
+}
+
+.cintillos-area {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.cintillo-item {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.cintillo-item input[type="text"] {
+  flex-grow: 1;
+}
+
+.buttons-area {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.buttons-area button {
+  flex-grow: 1;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  background-color: #d10000;
+  cursor: pointer;
+  color: white;
+}
+
+.buttons-area button:hover {
+  background-color: #b00000;
+}
+
+.remove-button {
+  background-color: #d10000;
+  color: white;
+  border: none;
+  padding: 5px 10px;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+.remove-button:hover {
+  background-color: #b00000;
+}
+
+.add-button {
+  background-color: #4caf50;
+  color: white;
+  border: none;
+  padding: 10px;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+.add-button:hover {
+  background-color: #45a049;
+}
+
+.saving-label {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.8);
+  font-size: 1.5em;
+  color: #d10000;
+  z-index: 10;
+}
+
+.revisado {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.revisado label {
+  display: flex;
+  align-items: center;
+}
+
+.revisado input[type="checkbox"] {
+  margin-left: 4px; /* Ajusta el espacio según sea necesario */
+}

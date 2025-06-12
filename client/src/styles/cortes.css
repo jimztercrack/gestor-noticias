@@ -1,0 +1,61 @@
+/* cortes.css */
+.corte {
+  align-items: center !important;
+  background-color: #fff !important;
+  cursor: pointer !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: space-around !important;
+  margin-bottom: 10px !important;
+  min-width: 300px !important;
+  position: relative !important;
+  transition: border-color 0.2s, background-color 0.2s, box-shadow 0.2s, transform 0.2s !important;
+}
+
+.corte.is-over {
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2); /* Sombra más pronunciada */
+  transform: scale(1.05); /* Aumentar el tamaño */
+  border: 2px dashed #000; /* Añadir un borde o cambiar el estilo mientras se reordena */
+  background-color: #d3d3d3; /* Color de fondo para indicar reordenamiento */
+  z-index: 10; /* Traer el elemento al frente durante el arrastre */
+}
+
+.divider {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: #d10000;
+  color: white;
+  width: 100%;
+  border-radius: 5px;
+  position: relative;
+  min-width: 300px; /* Ajustar el ancho mínimo para coincidir con .note */
+  transition: border-color 0.2s, background-color 0.2s, box-shadow 0.2s, transform 0.2s; /* Añadir transiciones como en .note */
+}
+
+.divider-text {
+  flex-grow: 1;
+  text-align: center;
+  font-weight: 900;
+}
+
+.corte .delete-icon {
+  background: none;
+  border: none;
+  color: white;
+  cursor: pointer;
+  font-size: 1.2rem;
+}
+
+.corte .delete-icon:hover {
+  color: #b00000;
+}
+
+/* Efecto hover */
+.corte:hover {
+  background-color: #f0f0f0;
+  border-color: #a0a0a0;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  transform: scale(1.02);
+  color: #333;
+}

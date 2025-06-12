@@ -1,0 +1,28 @@
+{
+  "name": "trecenoticias-app",
+  "version": "1.0.0",
+  "scripts": {
+    "client-install": "npm install --prefix client",
+    "server-install": "npm install --prefix server",
+    "client-build": "npm run build --prefix client",
+    "install": "npm run client-install && npm run server-install",
+    "heroku-postbuild": "npm run client-build && npm run server-install && npm rebuild bcrypt --prefix server",
+    "start": "node server/server.js",
+    "dev": "concurrently \"npm run server\" \"npm run client\"",
+    "server": "nodemon server/server.js",
+    "client": "npm start --prefix client"
+  },
+  "dependencies": {
+    "concurrently": "^7.0.0",
+    "dotenv": "^16.3.2",
+    "react-modal": "^3.16.1"
+  },
+  "engines": {
+    "node": "22.x",
+    "npm": "10.x"
+  },
+  "devDependencies": {
+    "@babel/plugin-proposal-private-property-in-object": "^7.21.11",
+    "@babel/plugin-transform-private-property-in-object": "^7.24.7"
+  }
+}

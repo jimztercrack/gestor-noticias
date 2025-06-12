@@ -1,0 +1,51 @@
+/* common.css */
+:root {
+    --container-width: 300px;
+  }
+  
+  /* Estilos comunes para los menús de tres puntos */
+  .menu-icon {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 1.5em;
+    color: #666;
+    position: relative;
+    padding: 5px;
+  }
+  
+  .menu-icon:hover {
+    color: #333;
+  }
+  
+  .container-menu,
+  .note-menu {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    background-color: white;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex-direction: column;
+    z-index: 1000;
+    padding: 10px;
+  }
+  
+  .container-menu button,
+  .note-menu button {
+    background: none;
+    border: none;
+    padding: 10px;
+    cursor: pointer;
+    text-align: left;
+    color: #d10000;
+    font-size: 1.2em;
+  }
+  
+  .container-menu button:hover,
+  .note-menu button:hover {
+    background-color: #f0f0f0;
+  }
+  

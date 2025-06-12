@@ -1,0 +1,6 @@
+
+# dependencies
+/node_modules
+server/populateDB.js
+server/runTests.js
+server/updateNotes.js

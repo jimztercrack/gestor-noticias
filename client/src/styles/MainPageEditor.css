@@ -1,0 +1,246 @@
+body, html {
+  margin: 0;
+  padding: 0;
+  font-family: 'Nunito Sans', sans-serif;
+  height: 100%;
+  /* overflow: hidden; */ /* Quitar esta línea para permitir desplazamiento */
+}
+
+.main-page-editor .main-page {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh; /* Usar min-height en lugar de height */
+}
+
+.main-page-editor .main-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 20px;
+}
+
+.main-page-editor .header-left {
+  display: flex;
+  align-items: center;
+}
+
+.main-page-editor .header-title {
+  display: flex;
+  align-items: center;
+}
+
+.main-page-editor .header-title .logo {
+  height: 50px;
+  margin-right: 10px;
+}
+
+.main-page-editor .header-right {
+  display: flex;
+  align-items: center;
+}
+
+.main-page-editor .header-right .logout-button {
+  background-color: #d32f2f;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+.main-page-editor .header-right .logout-button:hover {
+  background-color: #b71c1c;
+}
+
+.main-page-editor .main-content {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+  height: calc(100vh - 60px); /* Adjust based on the height of your header */
+}
+
+.main-page-editor .sidebar {
+  width: 500px; /* Adjust the width as necessary */
+  background-color: #f5f5f5;
+  border-right: 1px solid #ddd;
+  display: flex;
+  flex-direction: column;
+  height: 100%; /* Ensure the sidebar takes the full height */
+  overflow: hidden; /* Prevent the sidebar from causing page overflow */
+}
+
+.main-page-editor .header-buttons {
+  display: flex;
+  justify-content: flex-start; /* Align the buttons to the left */
+  gap: 10px; /* Space between the buttons */
+  padding: 20px;
+  align-items: center;
+  flex-shrink: 0;
+  position: sticky;
+  top: 0;
+  background-color: #f5f5f5;
+  z-index: 1;
+}
+
+.main-page-editor .create-button {
+  background-color: #d10000;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  cursor: pointer;
+  font-size: 16px;
+  flex-grow: 0; /* Allow the button to take the necessary space */
+  white-space: nowrap; /* Prevent the text from wrapping */
+}
+
+.main-page-editor .create-button:hover {
+  background-color: #b00000;
+}
+
+.main-page-editor .search-button, .calendar-button {
+  background-color: #d10000;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  cursor: pointer;
+  font-size: 16px;
+  flex-grow: 0; /* Ensure the other buttons do not grow */
+  width: auto; /* Adjust the width automatically based on the content */
+}
+
+.main-page-editor .search-button:hover, .calendar-button:hover {
+  background-color: #b00000;
+}
+
+.main-page-editor .header-buttons button:last-child {
+  margin-right: 0; /* Remove the right margin of the last button */
+}
+
+.main-page-editor .sidebar-content {
+  flex: 1;
+  overflow-y: auto; /* Enable vertical scrolling */
+  padding: 20px;
+}
+
+.main-page-editor .search-input {
+  padding: 10px;
+  font-size: 16px;
+  margin-bottom: 20px;
+  width: 80%;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.main-page-editor .date-filters {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.main-page-editor .date-filter {
+  margin-bottom: 10px;
+  width: 48%;
+}
+
+.main-page-editor .date-filter label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: bold;
+}
+
+.main-page-editor .date-filter input {
+  padding: 5px;
+  font-size: 16px;
+  width: 100%;
+}
+
+.main-page-editor .notes-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.main-page-editor .note-item {
+  padding: 10px;
+  background-color: #fff;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: border-color 0.2s, background-color 0.2s, box-shadow 0.2s, transform 0.2s;
+  display: flex;
+  justify-content: space-between; /* Ensure the title and date are distributed to the ends */
+}
+
+.main-page-editor .note-item:hover {
+  background-color: #f0f0f0;
+  border-color: #a0a0a0;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  transform: scale(1.02);
+  color: #333;
+}
+
+.main-page-editor .note-title {
+  font-size: 16px;
+  color: #000000;
+}
+
+.main-page-editor .note-date {
+  font-size: 14px;
+  color: #888888;
+  align-self: center;
+}
+
+.main-page-editor .note-content {
+  flex: 1;
+  padding: 20px;
+  background-color: #fff;
+  overflow-y: auto; /* Permitir desplazamiento vertical */
+}
+
+.main-page-editor .note-view-container {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  overflow-y: auto; /* Permitir desplazamiento vertical */
+  max-height: 100%; /* Asegurar que el contenedor no se salga de la vista */
+}
+
+.main-page-editor .placeholder {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+  color: #aaa;
+}
+
+@media (max-width: 768px) {
+  .main-page-editor .main-header, .main-page-editor .header-buttons, .main-page-editor .date-filters {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .main-page-editor .header-right, .main-page-editor .header-buttons {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .main-page-editor .header-buttons button, .main-page-editor .search-input, .main-page-editor .date-filter input {
+    width: 100%;
+    margin-bottom: 10px;
+  }
+
+  .main-page-editor .main-content {
+    flex-direction: column;
+  }
+
+  .main-page-editor .sidebar {
+    width: 100%;
+    border-right: none;
+    border-bottom: 1px solid #ddd;
+  }
+
+  .main-page-editor .note-content {
+    padding: 10px;
+  }
+}

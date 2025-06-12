@@ -1,0 +1,13 @@
+/* index.css */
+@import '~@fortawesome/fontawesome-free/css/all.min.css';
+@import url('https://fonts.googleapis.com/css2?family=Nunito+Sans:ital,opsz,wght@0,6..12,200..1000;1,6..12,200..1000&display=swap');
+@import './styles/reset.css';
+@import './styles/base.css';
+@import './styles/buttons.css';
+@import './styles/modal.css';
+@import './styles/containers.css';
+@import './styles/notes.css';
+@import './styles/cortes.css';
+@import './styles/header.css';
+@import './styles/form.css';
+@import './styles/common.css';
