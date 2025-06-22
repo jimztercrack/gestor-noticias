@@ -1,32 +1,34 @@
-const express = require('express');
-const mongoose = require('mongoose');
-const cors = require('cors');
-require('dotenv').config();
+import express from 'express';
+import mongoose from 'mongoose';
+import dotenv from 'dotenv';
+import path from 'path';
+import authRoutes from './routes/auth.js';
+import usersRoutes from './routes/users.js';
 
-const authRoutes = require('./routes/auth'); // Si tienes rutas de auth.js
-const usersRoutes = require('./routes/users'); // Si tienes rutas de users.js
-
+dotenv.config();
+const __dirname = path.resolve();
 const app = express();
 
-// Middlewares
-app.use(cors());
 app.use(express.json());
 
-// Rutas principales
-app.get('/', (req, res) => {
-  res.send('¡API de Gestor de Noticias funcionando correctamente!');
-});
+// Rutas API
 app.use('/api/auth', authRoutes);
 app.use('/api/users', usersRoutes);
 
-// Conexión a MongoDB
-mongoose.connect(process.env.MONGODB_URI)
+// Servir React del build
+app.use(express.static(path.join(__dirname, 'client/build')));
+
+// Cualquier otra ruta => index.html
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'client/build', 'index.html'));
+});
+
+// Conexión MongoDB y levantar server
+mongoose.connect(process.env.MONGO_URI)
   .then(() => {
     console.log('✅ Conectado a MongoDB');
-    app.listen(3001, () => {
-      console.log('✅ Servidor escuchando en puerto 3001');
+    app.listen(process.env.PORT || 3001, () => {
+      console.log(`✅ Servidor escuchando en puerto ${process.env.PORT || 3001}`);
     });
   })
-  .catch(err => {
-    console.error('❌ Error al conectar a MongoDB:', err);
-  });
+  .catch(err => console.error(err));
