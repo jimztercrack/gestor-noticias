@@ -1,25 +1,52 @@
 const express = require('express');
-const bcrypt = require('bcrypt');
 const router = express.Router();
-const User = require('../models/User'); // ✅ Usa el modelo centralizado
+const bcrypt = require('bcryptjs'); // USAR bcryptjs
+const jwt = require('jsonwebtoken');
+const User = require('../models/User');
 
-// Crear usuario (ejemplo)
-router.post('/register', async (req, res) => {
+// Obtener lista de usuarios (protegida)
+router.get('/', async (req, res) => {
+  try {
+    const users = await User.find().select('-password');
+    res.json(users);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Error del servidor' });
+  }
+});
+
+// Actualizar usuario
+router.put('/:id', async (req, res) => {
   try {
     const { username, password } = req.body;
 
-    const hashedPassword = await bcrypt.hash(password, 10);
+    const updateFields = { username };
+    if (password) {
+      const salt = await bcrypt.genSalt(10);
+      updateFields.password = await bcrypt.hash(password, salt);
+    }
 
-    const newUser = new User({
-      username,
-      password: hashedPassword,
-    });
+    const updatedUser = await User.findByIdAndUpdate(
+      req.params.id,
+      updateFields,
+      { new: true }
+    );
 
-    await newUser.save();
-    res.status(201).json({ message: 'Usuario creado correctamente' });
+    res.json(updatedUser);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: 'Error al crear usuario' });
+    res.status(500).json({ message: 'Error del servidor' });
+  }
+});
+
+// Eliminar usuario
+router.delete('/:id', async (req, res) => {
+  try {
+    await User.findByIdAndDelete(req.params.id);
+    res.json({ message: 'Usuario eliminado correctamente' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Error del servidor' });
   }
 });
 

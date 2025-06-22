@@ -1,12 +1,36 @@
 const express = require('express');
-// CAMBIO CLAVE: usa bcryptjs en lugar de bcrypt
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
-
 const router = express.Router();
-const User = require('../models/User'); // Modelo centralizado
+const bcrypt = require('bcryptjs'); // USAR bcryptjs
+const jwt = require('jsonwebtoken');
+const User = require('../models/User');
 
-// Ruta de login
+// Registrar usuario
+router.post('/register', async (req, res) => {
+  try {
+    const { username, password } = req.body;
+
+    // Verifica que no exista ya el usuario
+    const existingUser = await User.findOne({ username });
+    if (existingUser) {
+      return res.status(400).json({ message: 'El usuario ya existe' });
+    }
+
+    // Hashear contraseña
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
+
+    // Crea usuario nuevo
+    const newUser = new User({ username, password: hashedPassword });
+    await newUser.save();
+
+    res.status(201).json({ message: 'Usuario registrado correctamente' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Error del servidor' });
+  }
+});
+
+// Login
 router.post('/login', async (req, res) => {
   try {
     const { username, password } = req.body;
@@ -14,13 +38,13 @@ router.post('/login', async (req, res) => {
     // Busca usuario
     const user = await User.findOne({ username });
     if (!user) {
-      return res.status(401).json({ message: 'Usuario no encontrado' });
+      return res.status(400).json({ message: 'Credenciales inválidas' });
     }
 
-    // Valida contraseña
-    const isPasswordValid = await bcrypt.compare(password, user.password);
-    if (!isPasswordValid) {
-      return res.status(401).json({ message: 'Contraseña incorrecta' });
+    // Compara contraseña
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res.status(400).json({ message: 'Credenciales inválidas' });
     }
 
     // Genera token JWT
@@ -30,14 +54,10 @@ router.post('/login', async (req, res) => {
       { expiresIn: '1h' }
     );
 
-    res.json({
-      token,
-      message: 'Inicio de sesión exitoso'
-    });
-
+    res.json({ token });
   } catch (err) {
-    console.error('Error en login:', err);
-    res.status(500).json({ message: 'Error en el servidor' });
+    console.error(err);
+    res.status(500).json({ message: 'Error del servidor' });
   }
 });
 
