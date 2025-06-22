@@ -1,25 +1,40 @@
 const mongoose = require('mongoose');
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs'); // ✅ USA bcryptjs, compatible con Render
 
-const userSchema = new mongoose.Schema({
-  username: { type: String, required: true, unique: true },
-  password: { type: String, required: true },
-  firstName: { type: String, required: true },
-  lastName: { type: String, required: true },
-  role: { type: String, enum: ['editor', 'admin'], default: 'editor' } // Nuevo campo de permisos
+const UserSchema = new mongoose.Schema({
+  username: {
+    type: String,
+    required: true,
+    unique: true
+  },
+  password: {
+    type: String,
+    required: true
+  },
+  firstName: String,
+  lastName: String,
+  role: {
+    type: String,
+    enum: ['admin', 'editor', 'viewer'],
+    default: 'viewer'
+  }
 });
 
-userSchema.pre('save', async function (next) {
-  if (!this.isModified('password')) {
-    return next();
-  }
+// Middleware: hashea la contraseña antes de guardar
+UserSchema.pre('save', async function (next) {
+  if (!this.isModified('password')) return next();
   try {
     const salt = await bcrypt.genSalt(10);
     this.password = await bcrypt.hash(this.password, salt);
-    next();
-  } catch (error) {
-    next(error);
+    return next();
+  } catch (err) {
+    return next(err);
   }
 });
 
-module.exports = mongoose.model('User', userSchema);
+// Método para comparar contraseñas
+UserSchema.methods.comparePassword = async function (candidatePassword) {
+  return bcrypt.compare(candidatePassword, this.password);
+};
+
+module.exports = mongoose.model('User', UserSchema);
