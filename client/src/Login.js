@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import axios from 'axios';
 import { Button, TextField, Typography, Container, Box, CircularProgress } from '@mui/material';
@@ -14,12 +15,11 @@ const Login = ({ onLogin }) => {
     e.preventDefault();
     setLoading(true);
     try {
-      const response = await axios.post(`${switch_url}/api/auth/login`, 
+      const response = await axios.post(`${switch_url}/api/users/login`, 
         { username, password },
         {
           headers: {
-            'Content-Type': 'application/json',
-            'Access-Control-Allow-Origin': '*',
+            'Content-Type': 'application/json'
           }
         });
       onLogin(response.data.token, response.data.user);
