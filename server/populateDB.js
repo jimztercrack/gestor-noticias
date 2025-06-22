@@ -1,32 +1,65 @@
-// populateDB.js
-const mongoose = require('mongoose');
-const Nota = require('./models/Note'); // Asegúrate de que esta ruta sea correcta
 require('dotenv').config();
+const mongoose = require('mongoose');
+const bcrypt = require('bcryptjs');
 
-mongoose.connect(process.env.MONGODB_URI, { useNewUrlParser: true, useUnifiedTopology: true })
-  .then(() => {
-    console.log("Conectado a MongoDB");
-    return Nota.insertMany([
-      {
-        titulo: "Nota de Ejemplo 1",
-        contenido: "Contenido de la nota de ejemplo 1",
-        cintillos: [
-          { tipo: "Informativo", informacion: "Información adicional 1" }
-        ]
-      },
-      {
-        titulo: "Nota de Ejemplo 2",
-        contenido: "Contenido de la nota de ejemplo 2",
-        cintillos: [
-          { tipo: "Nombre", nombre: "Nombre 1", cargo: "Cargo 1" }
-        ]
+const User = require('./models/User');
+const Note = require('./models/Note');
+const Container = require('./models/Container');
+
+mongoose.connect(process.env.MONGODB_URI)
+  .then(() => console.log('✅ Conectado a MongoDB'))
+  .catch(err => console.error('❌ Error al conectar:', err));
+
+async function populateDB() {
+  try {
+    // Limpia todo
+    await User.deleteMany({ username: 'asalazar' });
+    await Note.deleteMany({});
+    await Container.deleteMany({});
+
+    // Usuario con hash
+    const hashedPassword = await bcrypt.hash("Canal@13", 10);
+    const user = new User({
+      username: "asalazar",
+      password: hashedPassword,
+      firstName: "Alfredo",
+      lastName: "Salazar"
+    });
+    await user.save();
+    console.log('✅ Usuario creado:', user.username);
+
+    // Contenedor: usar 'name', no 'nombre'
+    const container = new Container({
+      name: "Contenedor Principal",
+      createdBy: {
+        userId: user._id,
+        firstName: user.firstName,
+        lastName: user.lastName
       }
-    ]);
-  })
-  .then(() => {
-    console.log("Notas de ejemplo insertadas");
+    });
+    await container.save();
+    console.log('✅ Contenedor creado:', container.name);
+
+    // Nota
+    const note = new Note({
+      titulo: "Bienvenido a Gestor Noticias",
+      contenido: "Esta es una nota de prueba.",
+      createdBy: {
+        userId: user._id,
+        firstName: user.firstName,
+        lastName: user.lastName
+      },
+      container: container._id
+    });
+    await note.save();
+    console.log('✅ Nota creada:', note.titulo);
+
+    console.log('🎉 Base de datos poblada sin errores.');
+  } catch (err) {
+    console.error('❌ Error:', err);
+  } finally {
     mongoose.connection.close();
-  })
-  .catch(err => {
-    console.error("Error al conectar a MongoDB o insertar datos:", err);
-  });
+  }
+}
+
+populateDB();
