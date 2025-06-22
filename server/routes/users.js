@@ -1,16 +1,38 @@
+
 const express = require('express');
 const router = express.Router();
 const User = require('../models/User');
 const { check, validationResult } = require('express-validator');
 const getUser = require('../middlewares/getUser');
-const getAllUsers = require('../middlewares/getAllUsers'); 
+const getAllUsers = require('../middlewares/getAllUsers');
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+
+// 🔑 Login: Nueva ruta
+router.post('/login', async (req, res) => {
+  const { username, password } = req.body;
+  try {
+    const user = await User.findOne({ username });
+    if (!user) {
+      return res.status(400).json({ message: 'Usuario no encontrado' });
+    }
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res.status(400).json({ message: 'Contraseña incorrecta' });
+    }
+    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET);
+    res.json({ token, user });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
 
 // Usar el middleware para obtener un usuario por ID
 router.use('/:id', getUser);
 
 // Obtener todos los usuarios
 router.get('/', getAllUsers, (req, res) => {
-  res.json(res.users); // Devuelve la lista de usuarios al frontend
+  res.json(res.users);
 });
 
 // Obtener un usuario específico
