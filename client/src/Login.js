@@ -1,94 +1,66 @@
-
 import React, { useState } from 'react';
-import axios from 'axios';
-import { Button, TextField, Typography, Container, Box, CircularProgress } from '@mui/material';
-import logo from './utils/Logo-Trece.png';
-import switch_url from './switch';
 
-const Login = ({ onLogin }) => {
+function Login() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
+    setError('');
+
     try {
-      const response = await axios.post(`${switch_url}/api/users/login`, 
-        { username, password },
-        {
-          headers: {
-            'Content-Type': 'application/json'
-          }
-        });
-      onLogin(response.data.token, response.data.user);
-    } catch (error) {
-      if (error.response && error.response.data && error.response.data.message) {
-        setError(error.response.data.message);
+      const response = await fetch('https://gestor-noticias-api.onrender.com/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ username, password })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log('Login exitoso:', data);
+        // Aquí puedes guardar el token o redirigir:
+        // localStorage.setItem('token', data.token);
+        // window.location.href = '/dashboard';
       } else {
-        setError('Error en el inicio de sesión');
+        const err = await response.json();
+        setError(err.message || 'Error en el inicio de sesión');
       }
-    } finally {
-      setLoading(false);
+    } catch (err) {
+      console.error(err);
+      setError('Error en el servidor');
     }
   };
 
   return (
-    <Container component="main" maxWidth="xs">
-      <Box
-        sx={{
-          marginTop: 8,
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-        }}
-      >
-        <img src={logo} alt="Logo" style={{ marginBottom: 20, width: '50%' }} />
-        <Typography component="h1" variant="h5" sx={{ color: '#d10000' }}>
-          Inicio de Sesión
-        </Typography>
-        {error && <Typography color="error">{error}</Typography>}
-        <Box component="form" onSubmit={handleSubmit} sx={{ mt: 1 }}>
-          <TextField
-            variant="outlined"
-            margin="normal"
-            required
-            fullWidth
-            id="username"
-            label="Usuario"
-            name="username"
-            autoComplete="username"
-            autoFocus
+    <div className="login-container">
+      <h2>Inicio de Sesión</h2>
+      {error && <p style={{ color: 'red' }}>{error}</p>}
+      <form onSubmit={handleSubmit}>
+        <div>
+          <label>Usuario</label>
+          <input
+            type="text"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
-          />
-          <TextField
-            variant="outlined"
-            margin="normal"
             required
-            fullWidth
-            name="password"
-            label="Contraseña"
+          />
+        </div>
+        <div>
+          <label>Contraseña</label>
+          <input
             type="password"
-            id="password"
-            autoComplete="current-password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
+            required
           />
-          <Button
-            type="submit"
-            fullWidth
-            variant="contained"
-            sx={{ mt: 3, mb: 2, backgroundColor: '#d10000', ':hover': { backgroundColor: 'darkred' } }}
-            disabled={loading}
-          >
-            {loading ? <CircularProgress size={24} /> : 'Iniciar Sesión'}
-          </Button>
-        </Box>
-      </Box>
-    </Container>
+        </div>
+        <button type="submit">Iniciar Sesión</button>
+      </form>
+    </div>
   );
-};
+}
 
 export default Login;
