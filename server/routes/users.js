@@ -1,53 +1,20 @@
 const express = require('express');
-const router = express.Router();
-const bcrypt = require('bcryptjs'); // USAR bcryptjs
-const jwt = require('jsonwebtoken');
+const bcrypt = require('bcryptjs');
 const User = require('../models/User');
 
-// Obtener lista de usuarios (protegida)
+const router = express.Router();
+
 router.get('/', async (req, res) => {
-  try {
-    const users = await User.find().select('-password');
-    res.json(users);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: 'Error del servidor' });
-  }
+  const users = await User.find().select('-password');
+  res.json(users);
 });
 
-// Actualizar usuario
-router.put('/:id', async (req, res) => {
-  try {
-    const { username, password } = req.body;
-
-    const updateFields = { username };
-    if (password) {
-      const salt = await bcrypt.genSalt(10);
-      updateFields.password = await bcrypt.hash(password, salt);
-    }
-
-    const updatedUser = await User.findByIdAndUpdate(
-      req.params.id,
-      updateFields,
-      { new: true }
-    );
-
-    res.json(updatedUser);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: 'Error del servidor' });
-  }
-});
-
-// Eliminar usuario
-router.delete('/:id', async (req, res) => {
-  try {
-    await User.findByIdAndDelete(req.params.id);
-    res.json({ message: 'Usuario eliminado correctamente' });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: 'Error del servidor' });
-  }
+router.post('/', async (req, res) => {
+  const { username, password } = req.body;
+  const hashedPassword = await bcrypt.hash(password, 10);
+  const user = new User({ username, password: hashedPassword });
+  await user.save();
+  res.status(201).json({ message: 'Usuario creado' });
 });
 
 module.exports = router;
