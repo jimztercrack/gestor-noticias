@@ -12,25 +12,26 @@ mongoose.connect(process.env.MONGODB_URI)
 
 async function populateDB() {
   try {
-    // Limpia todo
+    // 1️⃣ Limpiar datos previos
     await User.deleteMany({ username: 'asalazar' });
     await Note.deleteMany({});
     await Container.deleteMany({});
 
-    // Usuario con hash
-    const hashedPassword = await bcrypt.hash("Canal@13", 10);
+    // 2️⃣ Crear usuario con hash bcrypt
+    const hashedPassword = await bcrypt.hash('Canal@13', 10);
     const user = new User({
-      username: "asalazar",
+      username: 'asalazar',
       password: hashedPassword,
-      firstName: "Alfredo",
-      lastName: "Salazar"
+      firstName: 'Alfredo',
+      lastName: 'Salazar',
+      role: 'editor'
     });
     await user.save();
     console.log('✅ Usuario creado:', user.username);
 
-    // Contenedor: usar 'name', no 'nombre'
+    // 3️⃣ Crear contenedor
     const container = new Container({
-      name: "Contenedor Principal",
+      name: 'Contenedor Principal',
       createdBy: {
         userId: user._id,
         firstName: user.firstName,
@@ -40,10 +41,10 @@ async function populateDB() {
     await container.save();
     console.log('✅ Contenedor creado:', container.name);
 
-    // Nota
+    // 4️⃣ Crear nota
     const note = new Note({
-      titulo: "Bienvenido a Gestor Noticias",
-      contenido: "Esta es una nota de prueba.",
+      titulo: 'Bienvenido a Gestor Noticias',
+      contenido: 'Esta es una nota de prueba.',
       createdBy: {
         userId: user._id,
         firstName: user.firstName,
@@ -54,7 +55,7 @@ async function populateDB() {
     await note.save();
     console.log('✅ Nota creada:', note.titulo);
 
-    console.log('🎉 Base de datos poblada sin errores.');
+    console.log('🎉 Base de datos poblada correctamente.');
   } catch (err) {
     console.error('❌ Error:', err);
   } finally {
