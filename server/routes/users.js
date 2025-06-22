@@ -1,29 +1,26 @@
-const mongoose = require('mongoose');
-const bcrypt = require('bcryptjs'); // CORREGIDO: usar bcryptjs
+const express = require('express');
+const bcrypt = require('bcrypt');
+const router = express.Router();
+const User = require('../models/User'); // ✅ Usa el modelo centralizado
 
-const UserSchema = new mongoose.Schema({
-  username: {
-    type: String,
-    required: true,
-    unique: true
-  },
-  password: {
-    type: String,
-    required: true
+// Crear usuario (ejemplo)
+router.post('/register', async (req, res) => {
+  try {
+    const { username, password } = req.body;
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const newUser = new User({
+      username,
+      password: hashedPassword,
+    });
+
+    await newUser.save();
+    res.status(201).json({ message: 'Usuario creado correctamente' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Error al crear usuario' });
   }
 });
 
-// Método para comparar contraseña al iniciar sesión
-UserSchema.methods.comparePassword = async function (candidatePassword) {
-  return await bcrypt.compare(candidatePassword, this.password);
-};
-
-// Middleware para hashear antes de guardar
-UserSchema.pre('save', async function (next) {
-  if (!this.isModified('password')) return next();
-  const salt = await bcrypt.genSalt(10);
-  this.password = await bcrypt.hash(this.password, salt);
-  next();
-});
-
-module.exports = mongoose.model('User', UserSchema);
+module.exports = router;
