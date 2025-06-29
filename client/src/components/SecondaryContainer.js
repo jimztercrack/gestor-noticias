@@ -176,8 +176,8 @@ const SecondaryContainer = ({
       </div>
       {isDollarModalOpen && (
         <DollarModal
-          isOpen={isDollarModalOpen}
-          onRequestClose={closeDollarModal}
+          show={isDollarModalOpen}
+          onClose={closeDollarModal} containerId={id}
           onSubmit={handleDollarSubmit}
         />
       )}
