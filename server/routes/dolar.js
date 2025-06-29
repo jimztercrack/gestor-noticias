@@ -1,37 +1,48 @@
 const express = require('express');
 const router = express.Router();
-const Dolar = require('../models/Dolar'); // Asegúrate de que el modelo Dolar esté definido
+const Dolar = require('../models/Dolar');
 
-// Crear o actualizar un registro de dólar
-router.post('/', async (req, res) => {
+// Ruta para guardar o actualizar el tipo de cambio de un container específico
+router.post('/guardar', async (req, res) => {
+  const { compra, venta, containerId } = req.body;
+
+  if (!compra || !venta || !containerId) {
+    return res.status(400).json({ message: 'Todos los campos son obligatorios: compra, venta y containerId.' });
+  }
+
   try {
-    // Buscar el último registro de dólar
-    let latestDolar = await Dolar.findOne().sort({ createdAt: -1 });
+    // Verificar si ya existe un tipo de cambio para ese container
+    let tipoCambio = await Dolar.findOne({ containerId });
 
-    if (latestDolar) {
-      // Actualizar el último registro de dólar
-      latestDolar.compra = req.body.compra;
-      latestDolar.venta = req.body.venta;
-      const updatedDolar = await latestDolar.save();
-      res.status(200).json(updatedDolar);
+    if (tipoCambio) {
+      // Si existe, se actualiza
+      tipoCambio.compra = compra;
+      tipoCambio.venta = venta;
+      await tipoCambio.save();
     } else {
-      // Crear un nuevo registro de dólar
-      const newDolar = new Dolar(req.body);
-      const savedDolar = await newDolar.save();
-      res.status(201).json(savedDolar);
+      // Si no existe, se crea uno nuevo
+      tipoCambio = new Dolar({ compra, venta, containerId });
+      await tipoCambio.save();
     }
+
+    res.status(200).json({ message: 'Tipo de cambio guardado correctamente', data: tipoCambio });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error('Error al guardar el tipo de cambio:', error);
+    res.status(500).json({ message: 'Error al guardar el tipo de cambio', error });
   }
 });
 
-// Obtener todos los registros de dólar
-router.get('/', async (req, res) => {
+// Ruta para obtener el tipo de cambio de un container
+router.get('/:containerId', async (req, res) => {
   try {
-    const dolars = await Dolar.find();
-    res.status(200).json(dolars);
+    const tipoCambio = await Dolar.findOne({ containerId: req.params.containerId });
+    if (!tipoCambio) {
+      return res.status(404).json({ message: 'No se encontró tipo de cambio para este container' });
+    }
+    res.json(tipoCambio);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error('Error al obtener el tipo de cambio:', error);
+    res.status(500).json({ message: 'Error al obtener el tipo de cambio' });
   }
 });
 
