@@ -1,11 +1,33 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 function DolarModal({ show, onClose, containerId }) {
   const [tipoCambioCompra, setTipoCambioCompra] = useState('');
   const [tipoCambioVenta, setTipoCambioVenta] = useState('');
   const [fecha, setFecha] = useState('');
   const [error, setError] = useState('');
+
+  useEffect(() => {
+    // Obtener último tipo de cambio si existe
+    const fetchUltimo = async () => {
+      try {
+        const response = await fetch(`https://gestor-noticias-api.onrender.com/api/dolars/${containerId}`);
+        if (response.ok) {
+          const data = await response.json();
+          if (data && data.compra && data.venta) {
+            setTipoCambioCompra(data.compra);
+            setTipoCambioVenta(data.venta);
+          }
+        }
+      } catch (error) {
+        console.error('Error al cargar tipo de cambio previo', error);
+      }
+    };
+
+    if (show && containerId) {
+      fetchUltimo();
+    }
+  }, [show, containerId]);
 
   const handleGuardar = async () => {
     if (!tipoCambioCompra || !tipoCambioVenta || !fecha) {
@@ -16,19 +38,11 @@ function DolarModal({ show, onClose, containerId }) {
     try {
       const response = await fetch('https://gestor-noticias-api.onrender.com/api/dolars/guardar', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          compra: tipoCambioCompra,
-          venta: tipoCambioVenta,
-          containerId,
-        }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ compra: tipoCambioCompra, venta: tipoCambioVenta, fecha, containerId }),
       });
 
-      if (!response.ok) {
-        throw new Error('Error al guardar el tipo de cambio');
-      }
+      if (!response.ok) throw new Error('Error al guardar el tipo de cambio');
 
       setError('');
       onClose();
@@ -44,6 +58,7 @@ function DolarModal({ show, onClose, containerId }) {
     <div className="modal">
       <div className="modal-content">
         <h2>Ingresar Tipo de Cambio</h2>
+
         <input
           type="text"
           placeholder="Tipo de cambio compra"
@@ -62,8 +77,9 @@ function DolarModal({ show, onClose, containerId }) {
           onChange={(e) => setFecha(e.target.value)}
         />
         {error && <p className="error">{error}</p>}
-        <button onClick={handleGuardar}>Guardar</button>
-        <button onClick={onClose}>Cancelar</button>
+
+        <button className="btn btn-red" onClick={handleGuardar}>Guardar</button>
+        <button className="btn btn-gray" onClick={onClose}>Cancelar</button>
       </div>
     </div>
   );
