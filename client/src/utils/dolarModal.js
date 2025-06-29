@@ -1,85 +1,85 @@
-import React, { useState, useEffect } from 'react';
-import Modal from 'react-modal';
-import axios from 'axios';
-import '../styles/dolarModal.css'; // Importa los estilos del modal
-import switch_url from '../switch';
 
-const DollarModal = ({ isOpen, onRequestClose, onSubmit }) => {
+import React, { useState } from 'react';
+import { Modal, Button, Form } from 'react-bootstrap';
+
+const DolarModal = ({ showModal, setShowModal }) => {
   const [compra, setCompra] = useState('');
   const [venta, setVenta] = useState('');
-  const [lastDolar, setLastDolar] = useState(null);
+  const [error, setError] = useState('');
 
-  useEffect(() => {
-    if (isOpen) {
-      axios.get(`${switch_url}/api/dolars`)
-        .then(response => {
-          const dolars = response.data;
-          if (dolars.length > 0) {
-            setLastDolar(dolars[dolars.length - 1]);
-            setCompra(dolars[dolars.length - 1].compra);
-            setVenta(dolars[dolars.length - 1].venta);
-          } else {
-            console.log('No dolar data found');
-          }
-        })
-        .catch(error => {
-          console.error('Error fetching last dolar data:', error);
-        });
-    } else {
-      console.log('Modal is not open');
+  const handleClose = () => {
+    setShowModal(false);
+    setCompra('');
+    setVenta('');
+    setError('');
+  };
+
+  const handleSaveDolar = async () => {
+    if (!compra || !venta) {
+      setError('Debe ingresar ambos valores de compra y venta');
+      return;
     }
-  }, [isOpen]);
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    console.log('Submitting new dolar data:', { compra, venta });
-    axios.post(`${switch_url}/api/dolars`, { compra, venta })
-      .then(response => {
-        console.log('Dolar data saved:', response.data);
-        onSubmit(compra, venta);
-      })
-      .catch(error => {
-        console.error('Error saving dolar data:', error);
+    try {
+      const response = await fetch('https://gestor-noticias-api.onrender.com/api/dolars', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${localStorage.getItem('token')}`,
+        },
+        body: JSON.stringify({ compra, venta }),
       });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Error al guardar el tipo de cambio');
+      }
+
+      alert('Tipo de cambio guardado correctamente');
+      setShowModal(false);
+    } catch (error) {
+      console.error('Error al guardar:', error);
+      setError(error.message);
+    }
   };
 
   return (
-    <Modal
-      isOpen={isOpen}
-      onRequestClose={onRequestClose}
-    >
-      <h2>Tipo de Cambio</h2>
-      {lastDolar && (
-        <div className="last-dolar-info">
-          <p><strong>Último Dato Registrado:</strong></p>
-          <p>Compra: {lastDolar.compra}</p>
-          <p>Venta: {lastDolar.venta}</p>
-        </div>
-      )}
-      <form onSubmit={handleSubmit}>
-        <label>
-          Compra:
-          <input
-            value={compra}
-            onChange={(e) => setCompra(e.target.value)}
-            required
-          />
-        </label>
-        <label>
-          Venta:
-          <input
-            value={venta}
-            onChange={(e) => setVenta(e.target.value)}
-            required
-          />
-        </label>
-        <div style={{ display: 'flex', justifyContent: 'center' }}>
-          <button type="submit">Guardar</button>
-          <button type="button" onClick={onRequestClose}>Cancelar</button>
-        </div>
-      </form>
+    <Modal show={showModal} onHide={handleClose}>
+      <Modal.Header closeButton>
+        <Modal.Title>Tipo de Cambio</Modal.Title>
+      </Modal.Header>
+      <Modal.Body>
+        <Form>
+          <Form.Group controlId="formCompra">
+            <Form.Label>Compra</Form.Label>
+            <Form.Control
+              type="number"
+              value={compra}
+              onChange={(e) => setCompra(e.target.value)}
+            />
+          </Form.Group>
+          <Form.Group controlId="formVenta">
+            <Form.Label>Venta</Form.Label>
+            <Form.Control
+              type="number"
+              value={venta}
+              onChange={(e) => setVenta(e.target.value)}
+            />
+          </Form.Group>
+          {error && <p className="text-danger mt-2">{error}</p>}
+        </Form>
+      </Modal.Body>
+      <Modal.Footer>
+        <Button variant="secondary" onClick={handleClose}>
+          Cancelar
+        </Button>
+        <Button variant="success" onClick={handleSaveDolar}>
+          Guardar
+        </Button>
+      </Modal.Footer>
     </Modal>
   );
 };
 
-export default DollarModal;
+export default DolarModal;
