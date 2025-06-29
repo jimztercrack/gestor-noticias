@@ -14,16 +14,15 @@ function DolarModal({ show, onClose, containerId }) {
     }
 
     try {
-      const response = await fetch('https://gestor-noticias-api.onrender.com/api/dolar', {
+      const response = await fetch('https://gestor-noticias-api.onrender.com/api/dolar/guardar', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          tipoCambioCompra,
-          tipoCambioVenta,
-          fecha,
-          containerId, // Aseguramos que se envíe correctamente el containerId
+          compra: tipoCambioCompra,
+          venta: tipoCambioVenta,
+          containerId
         }),
       });
 
