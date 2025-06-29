@@ -14,7 +14,7 @@ function DolarModal({ show, onClose, containerId }) {
     }
 
     try {
-      const response = await fetch('https://gestor-noticias-api.onrender.com/api/dolar/guardar', {
+      const response = await fetch('https://gestor-noticias-api.onrender.com/api/dolars/guardar', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -22,7 +22,7 @@ function DolarModal({ show, onClose, containerId }) {
         body: JSON.stringify({
           compra: tipoCambioCompra,
           venta: tipoCambioVenta,
-          containerId
+          containerId,
         }),
       });
 
