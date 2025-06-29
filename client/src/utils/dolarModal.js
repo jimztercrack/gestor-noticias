@@ -1,22 +1,15 @@
 
 import React, { useState } from 'react';
-import { Modal, Button, Form } from 'react-bootstrap';
 
-const DolarModal = ({ showModal, setShowModal }) => {
-  const [compra, setCompra] = useState('');
-  const [venta, setVenta] = useState('');
+function DolarModal({ show, onClose, containerId }) {
+  const [tipoCambioCompra, setTipoCambioCompra] = useState('');
+  const [tipoCambioVenta, setTipoCambioVenta] = useState('');
+  const [fecha, setFecha] = useState('');
   const [error, setError] = useState('');
 
-  const handleClose = () => {
-    setShowModal(false);
-    setCompra('');
-    setVenta('');
-    setError('');
-  };
-
-  const handleSaveDolar = async () => {
-    if (!compra || !venta) {
-      setError('Debe ingresar ambos valores de compra y venta');
+  const handleGuardar = async () => {
+    if (!tipoCambioCompra || !tipoCambioVenta || !fecha) {
+      setError('Todos los campos son obligatorios');
       return;
     }
 
@@ -25,61 +18,56 @@ const DolarModal = ({ showModal, setShowModal }) => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
         },
-        body: JSON.stringify({ compra, venta }),
+        body: JSON.stringify({
+          tipoCambioCompra,
+          tipoCambioVenta,
+          fecha,
+          containerId, // Aseguramos que se envíe correctamente el containerId
+        }),
       });
 
-      const data = await response.json();
-
       if (!response.ok) {
-        throw new Error(data.message || 'Error al guardar el tipo de cambio');
+        throw new Error('Error al guardar el tipo de cambio');
       }
 
-      alert('Tipo de cambio guardado correctamente');
-      setShowModal(false);
-    } catch (error) {
-      console.error('Error al guardar:', error);
-      setError(error.message);
+      setError('');
+      onClose();
+    } catch (err) {
+      console.error(err);
+      setError('Error al guardar el tipo de cambio');
     }
   };
 
+  if (!show) return null;
+
   return (
-    <Modal show={showModal} onHide={handleClose}>
-      <Modal.Header closeButton>
-        <Modal.Title>Tipo de Cambio</Modal.Title>
-      </Modal.Header>
-      <Modal.Body>
-        <Form>
-          <Form.Group controlId="formCompra">
-            <Form.Label>Compra</Form.Label>
-            <Form.Control
-              type="number"
-              value={compra}
-              onChange={(e) => setCompra(e.target.value)}
-            />
-          </Form.Group>
-          <Form.Group controlId="formVenta">
-            <Form.Label>Venta</Form.Label>
-            <Form.Control
-              type="number"
-              value={venta}
-              onChange={(e) => setVenta(e.target.value)}
-            />
-          </Form.Group>
-          {error && <p className="text-danger mt-2">{error}</p>}
-        </Form>
-      </Modal.Body>
-      <Modal.Footer>
-        <Button variant="secondary" onClick={handleClose}>
-          Cancelar
-        </Button>
-        <Button variant="success" onClick={handleSaveDolar}>
-          Guardar
-        </Button>
-      </Modal.Footer>
-    </Modal>
+    <div className="modal">
+      <div className="modal-content">
+        <h2>Ingresar Tipo de Cambio</h2>
+        <input
+          type="text"
+          placeholder="Tipo de cambio compra"
+          value={tipoCambioCompra}
+          onChange={(e) => setTipoCambioCompra(e.target.value)}
+        />
+        <input
+          type="text"
+          placeholder="Tipo de cambio venta"
+          value={tipoCambioVenta}
+          onChange={(e) => setTipoCambioVenta(e.target.value)}
+        />
+        <input
+          type="date"
+          value={fecha}
+          onChange={(e) => setFecha(e.target.value)}
+        />
+        {error && <p className="error">{error}</p>}
+        <button onClick={handleGuardar}>Guardar</button>
+        <button onClick={onClose}>Cancelar</button>
+      </div>
+    </div>
   );
-};
+}
 
 export default DolarModal;
