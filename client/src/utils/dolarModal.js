@@ -1,85 +1,73 @@
-import React, { useState, useEffect } from 'react';
-import Modal from 'react-modal';
-import axios from 'axios';
-import '../styles/dolarModal.css'; // Importa los estilos del modal
-import switch_url from '../switch';
 
-const DollarModal = ({ isOpen, onRequestClose, onSubmit }) => {
-  const [compra, setCompra] = useState('');
-  const [venta, setVenta] = useState('');
-  const [lastDolar, setLastDolar] = useState(null);
+import React, { useState } from 'react';
 
-  useEffect(() => {
-    if (isOpen) {
-      axios.get(`${switch_url}/api/dolars`)
-        .then(response => {
-          const dolars = response.data;
-          if (dolars.length > 0) {
-            setLastDolar(dolars[dolars.length - 1]);
-            setCompra(dolars[dolars.length - 1].compra);
-            setVenta(dolars[dolars.length - 1].venta);
-          } else {
-            console.log('No dolar data found');
-          }
-        })
-        .catch(error => {
-          console.error('Error fetching last dolar data:', error);
-        });
-    } else {
-      console.log('Modal is not open');
+function DolarModal({ show, onClose, containerId }) {
+  const [tipoCambioCompra, setTipoCambioCompra] = useState('');
+  const [tipoCambioVenta, setTipoCambioVenta] = useState('');
+  const [fecha, setFecha] = useState('');
+  const [error, setError] = useState('');
+
+  const handleGuardar = async () => {
+    if (!tipoCambioCompra || !tipoCambioVenta || !fecha) {
+      setError('Todos los campos son obligatorios');
+      return;
     }
-  }, [isOpen]);
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    console.log('Submitting new dolar data:', { compra, venta });
-    axios.post(`${switch_url}/api/dolars`, { compra, venta })
-      .then(response => {
-        console.log('Dolar data saved:', response.data);
-        onSubmit(compra, venta);
-      })
-      .catch(error => {
-        console.error('Error saving dolar data:', error);
+    try {
+      const response = await fetch('https://gestor-noticias-api.onrender.com/api/dolars/guardar', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          compra: tipoCambioCompra,
+          venta: tipoCambioVenta,
+          fecha,
+          containerId,
+        }),
       });
+
+      if (!response.ok) {
+        throw new Error('Error al guardar el tipo de cambio');
+      }
+
+      setError('');
+      onClose();
+    } catch (err) {
+      console.error(err);
+      setError('Error al guardar el tipo de cambio');
+    }
   };
 
-  return (
-    <Modal
-      isOpen={isOpen}
-      onRequestClose={onRequestClose}
-    >
-      <h2>Tipo de Cambio</h2>
-      {lastDolar && (
-        <div className="last-dolar-info">
-          <p><strong>Último Dato Registrado:</strong></p>
-          <p>Compra: {lastDolar.compra}</p>
-          <p>Venta: {lastDolar.venta}</p>
-        </div>
-      )}
-      <form onSubmit={handleSubmit}>
-        <label>
-          Compra:
-          <input
-            value={compra}
-            onChange={(e) => setCompra(e.target.value)}
-            required
-          />
-        </label>
-        <label>
-          Venta:
-          <input
-            value={venta}
-            onChange={(e) => setVenta(e.target.value)}
-            required
-          />
-        </label>
-        <div style={{ display: 'flex', justifyContent: 'center' }}>
-          <button type="submit">Guardar</button>
-          <button type="button" onClick={onRequestClose}>Cancelar</button>
-        </div>
-      </form>
-    </Modal>
-  );
-};
+  if (!show) return null;
 
-export default DollarModal;
+  return (
+    <div className="modal">
+      <div className="modal-content">
+        <h2>Ingresar Tipo de Cambio</h2>
+        <input
+          type="text"
+          placeholder="Tipo de cambio compra"
+          value={tipoCambioCompra}
+          onChange={(e) => setTipoCambioCompra(e.target.value)}
+        />
+        <input
+          type="text"
+          placeholder="Tipo de cambio venta"
+          value={tipoCambioVenta}
+          onChange={(e) => setTipoCambioVenta(e.target.value)}
+        />
+        <input
+          type="date"
+          value={fecha}
+          onChange={(e) => setFecha(e.target.value)}
+        />
+        {error && <p className="error">{error}</p>}
+        <button onClick={handleGuardar}>Guardar</button>
+        <button onClick={onClose}>Cancelar</button>
+      </div>
+    </div>
+  );
+}
+
+export default DolarModal;
