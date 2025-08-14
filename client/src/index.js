@@ -13,36 +13,32 @@ import switch_url from './switch';
 
 Modal.setAppElement('#root');
 
-// --- FIX navegador: prevenir navegación en drag & drop a nivel global ---
-const preventDragNav = (e) => {
+// ✅ Listeners mínimos: no usan capture ni stopPropagation.
+//    Permiten a react-dnd manejar el drop. Solo evitamos que
+//    soltar ARCHIVOS externos abra el navegador.
+window.addEventListener('dragover', (e) => {
   e.preventDefault();
-  e.stopPropagation();
-  try {
-    if (e.dataTransfer) e.dataTransfer.dropEffect = 'none';
-  } catch {}
-};
-window.addEventListener('dragover', preventDragNav, { capture: true, passive: false });
-window.addEventListener('drop', preventDragNav, { capture: true, passive: false });
-// ------------------------------------------------------------------------
+}, false);
+
+window.addEventListener('drop', (e) => {
+  const types = e.dataTransfer ? Array.from(e.dataTransfer.types || []) : [];
+  if (types.includes('Files')) {
+    e.preventDefault();
+  }
+}, false);
 
 // Configuración del cliente de Socket.IO
-const socket = io(switch_url);  // Asegúrate de que esta URL coincide con la configuración del servidor
-// Opcional: evita warning si no usas 'socket' en ningún lado
+const socket = io(switch_url); // Asegúrate de que esta URL coincide con tu servidor
+// Opcional, para evitar warning si no lo usas aún:
 // window.__socket = socket;
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>
     <DndProvider backend={HTML5Backend}>
-      {/* Wrapper que también bloquea drag/drop por si cae dentro del árbol React */}
-      <div
-        onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
-        onDrop={(e) => { e.preventDefault(); e.stopPropagation(); }}
-        style={{ height: '100%' }}
-      >
-        <App />
-        <ToastContainer autoClose={1500} />
-      </div>
+      {/* ❌ Sin wrapper con onDragOver/onDrop que bloquee eventos */}
+      <App />
+      <ToastContainer autoClose={1500} />
     </DndProvider>
   </React.StrictMode>
 );
