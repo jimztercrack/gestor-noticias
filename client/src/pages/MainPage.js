@@ -11,6 +11,34 @@ import logo from '../utils/Logo-Trece.png';
 import DropdownMenu from '../components/DropdownMenu';
 import switch_url from '../switch';
 
+// ===================== Helpers defensivos =====================
+const clampIndex = (idx, length) => {
+  const n = Number.isFinite(idx) ? idx : length;
+  return Math.max(0, Math.min(n, length));
+};
+
+const sanitizeContainer = (c = {}) => {
+  const items = Array.isArray(c.items) ? c.items : [];
+  const clean = items
+    .filter(e => e && e.type && e.item && e.item._id) // quita nulos/corruptos
+    .sort((a, b) => {
+      // si no hay order, fallback por estabilidad
+      const ao = Number.isFinite(a.order) ? a.order : 0;
+      const bo = Number.isFinite(b.order) ? b.order : 0;
+      return ao - bo;
+    })
+    .map((e, idx) => ({
+      ...e,
+      order: Number.isFinite(e.order) ? e.order : idx, // normaliza order
+    }));
+
+  return { ...c, items: clean };
+};
+
+const sanitizeAll = (arr = []) => (Array.isArray(arr) ? arr.map(sanitizeContainer) : []);
+
+// =============================================================
+
 const MainPage = ({ onLogout, user, socket }) => {
   const [showModal, setShowModal] = useState(false);
   const [currentNote, setCurrentNote] = useState(null);
@@ -30,32 +58,31 @@ const MainPage = ({ onLogout, user, socket }) => {
 
   const applyFilters = useCallback(() => {
     let filtered = notes;
-  
+
     if (searchTerm) {
       const lowercasedTerm = searchTerm.toLowerCase();
       filtered = filtered.filter(note =>
-        note.titulo.toLowerCase().includes(lowercasedTerm) ||
-        note.contenido.toLowerCase().includes(lowercasedTerm)
+        (note.titulo || '').toLowerCase().includes(lowercasedTerm) ||
+        (note.contenido || '').toLowerCase().includes(lowercasedTerm)
       );
     }
-  
+
     if (startDate) {
       const start = new Date(startDate);
       start.setDate(start.getDate() + 1);
       start.setHours(0, 0, 0, 0);
       filtered = filtered.filter(note => new Date(note.createdAt) >= start);
     }
-  
+
     if (endDate) {
       const end = new Date(endDate);
       end.setDate(end.getDate() + 1);
       end.setHours(23, 59, 59, 999);
       filtered = filtered.filter(note => new Date(note.createdAt) < end);
     }
-  
+
     setFilteredNotes(filtered);
   }, [notes, searchTerm, startDate, endDate]);
-  
 
   useEffect(() => {
     loadNotes();
@@ -71,7 +98,6 @@ const MainPage = ({ onLogout, user, socket }) => {
     };
   }, [socket]);
 
-
   useEffect(() => {
     applyFilters();
   }, [searchTerm, notes, startDate, endDate, applyFilters]);
@@ -79,27 +105,23 @@ const MainPage = ({ onLogout, user, socket }) => {
   const loadNotes = () => {
     axios.get(`${switch_url}/api/notas`)
       .then(response => {
-        const fetchedNotes = response.data.filter(note => !note.containerId);
+        const fetchedNotes = (response.data || [])
+          .filter(note => !note.containerId);
         fetchedNotes.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
         setNotes(fetchedNotes);
         setFilteredNotes(fetchedNotes);
       })
       .catch(error => console.error('Error al obtener las notas:', error));
   };
-  
 
   const loadContainers = () => {
     axios.get(`${switch_url}/api/containers`)
       .then(response => {
-        const sortedContainers = response.data.map(container => {
-          const sortedItems = container.items.sort((a, b) => a.order - b.order);
-          return { ...container, items: sortedItems };
-        });
-        setSecondaryContainers(sortedContainers);
+        const clean = sanitizeAll(response.data || []);
+        setSecondaryContainers(clean);
       })
       .catch(error => console.error('Error al obtener los contenedores:', error));
   };
-  
 
   const handleEdit = (note) => {
     setCurrentNote(note);
@@ -117,25 +139,25 @@ const MainPage = ({ onLogout, user, socket }) => {
     if (isNew) {
       setNotes((prevNotes) => [updatedOrNewNote, ...prevNotes]);
       setFilteredNotes((prevNotes) => [updatedOrNewNote, ...prevNotes]);
-      loadContainers(); 
+      loadContainers();
       loadNotes();
     } else {
-      const noteId = updatedOrNewNote._id;
-  
+      const noteId = updatedOrNewNote?._id;
+
       if (!noteId) {
         console.error('noteId es undefined');
         toast.error('Error: El ID de la nota es undefined');
         return;
       }
-  
-      setNotes((prevNotes) => 
+
+      setNotes((prevNotes) =>
         prevNotes.map((note) =>
           note._id === noteId || note.originalNoteId === noteId
             ? updatedOrNewNote
             : note
         )
       );
-  
+
       setFilteredNotes((prevFilteredNotes) =>
         prevFilteredNotes.map((note) =>
           note._id === noteId || note.originalNoteId === noteId
@@ -143,7 +165,7 @@ const MainPage = ({ onLogout, user, socket }) => {
             : note
         )
       );
-  
+
       loadContainers();
       loadNotes();
     }
@@ -176,7 +198,7 @@ const MainPage = ({ onLogout, user, socket }) => {
     } else {
       axios.delete(`${switch_url}/api/notas/${id}`)
         .then(() => {
-          setNotes(notes.filter(note => note._id !== id));
+          setNotes(prev => prev.filter(note => note._id !== id));
           toast.success('Nota eliminada correctamente');
         })
         .catch(error => {
@@ -189,7 +211,7 @@ const MainPage = ({ onLogout, user, socket }) => {
   const handleAddContainer = (containerName) => {
     axios.post(`${switch_url}/api/containers`, { name: containerName })
       .then(response => {
-        setSecondaryContainers([...secondaryContainers, response.data]);
+        setSecondaryContainers(prev => sanitizeAll([...prev, response.data]));
         setShowNewContainerModal(false);
         toast.success('Guion creado correctamente');
       })
@@ -208,12 +230,15 @@ const MainPage = ({ onLogout, user, socket }) => {
       .then(response => {
         const newCorte = response.data;
         setSecondaryContainers(prevContainers => {
-          return prevContainers.map(container => {
+          const next = prevContainers.map(container => {
             if (container._id === containerId) {
-              return { ...container, items: [...container.items, { type: 'Corte', item: newCorte }] };
+              const items = Array.isArray(container.items) ? [...container.items] : [];
+              items.push({ type: 'Corte', item: newCorte, order: items.length });
+              return sanitizeContainer({ ...container, items });
             }
             return container;
           });
+          return next;
         });
       })
       .catch(error => {
@@ -227,111 +252,98 @@ const MainPage = ({ onLogout, user, socket }) => {
     setSelectedContainerId(containerId);
     console.log('Selected container ID:', containerId);
   }, []);
-  
 
   const onReorderItem = useCallback((itemId, containerId, newIndex, itemType) => {
-    if (containerId === null) {
-      return;
-    }
-  
+    if (!containerId) return;
+
     setSecondaryContainers(prevContainers => {
-      const containerIndex = prevContainers.findIndex(container => container._id === containerId);
-      if (containerIndex === -1) {
-        console.log('Container not found:', containerId);
-        return prevContainers;
-      }
-      const container = prevContainers[containerIndex];
-      const items = [...container.items];
-  
-      const itemIndex = items.findIndex(item => item.item._id === itemId && item.type === itemType);
-      if (itemIndex === -1) {
-        return prevContainers;
-      }
-  
-      const [movedItem] = items.splice(itemIndex, 1);
-      items.splice(newIndex, 0, movedItem);
-  
-      const reorderedItems = items.map((item, index) => ({ ...item, order: index }));
-  
-      const updatedContainer = { ...container, items: reorderedItems };
-  
+      const ci = prevContainers.findIndex(c => c._id === containerId);
+      if (ci === -1) return prevContainers;
+
+      const container = prevContainers[ci];
+      const items = Array.isArray(container.items) ? [...container.items] : [];
+
+      const from = items.findIndex(x => x && x.type === itemType && x.item && x.item._id === itemId);
+      if (from === -1) return prevContainers;
+
+      const [moved] = items.splice(from, 1);
+      if (!moved || !moved.item) return prevContainers;
+
+      const safeIndex = clampIndex(newIndex, items.length); // después de remover
+      items.splice(safeIndex, 0, moved);
+
+      const reorderedItems = items.map((it, idx) => ({ ...it, order: idx }));
+
+      const updatedContainer = sanitizeContainer({ ...container, items: reorderedItems });
+
       clearTimeout(window.reorderTimeout);
       window.reorderTimeout = setTimeout(() => {
         axios.patch(`${switch_url}/api/containers/${containerId}/reorder`, { items: reorderedItems })
-          .then(response => {
-            console.log('Items reordered successfully');
-          })
-          .catch(error => {
-            console.error('Error reordering items:', error);
-          });
+          .then(() => console.log('Items reordered successfully'))
+          .catch(err => console.error('Error reordering items:', err));
       }, 300);
-  
+
       return [
-        ...prevContainers.slice(0, containerIndex),
+        ...prevContainers.slice(0, ci),
         updatedContainer,
-        ...prevContainers.slice(containerIndex + 1),
+        ...prevContainers.slice(ci + 1),
       ];
     });
   }, []);
-  
-  
 
-  
   const onDropNote = (noteId, containerId, dropIndex, itemType = 'Note') => {
-    if (!containerId || containerId === null) {
+    if (!containerId) {
       console.error('No reordering needed.');
       return;
     }
-  
+
     const noteToCopy = itemType === 'Note' ? notes.find(note => note._id === noteId) : null;
-  
-    if (!noteToCopy) {
+    if (itemType === 'Note' && !noteToCopy) {
       console.log(`${itemType} not found for ID:`, noteId);
       return;
     }
-  
-    const newNote = {
-      titulo: noteToCopy.titulo,
-      contenido: noteToCopy.contenido,
-      cintillos: noteToCopy.cintillos,
-      createdAt: noteToCopy.createdAt,
-      containerId: containerId,
-      originalNoteId: itemType === 'Note' ? noteToCopy._id : null,
-      reviewed: noteToCopy.reviewed,
-      createdBy: noteToCopy.createdBy,
-    };
-  
-    const url = itemType === 'Note' ? `${switch_url}/api/containers/${containerId}/notes` : `${switch_url}/api/containers/${containerId}/cortes`;
-  
+
+    const newNote = itemType === 'Note'
+      ? {
+          titulo: noteToCopy.titulo,
+          contenido: noteToCopy.contenido,
+          cintillos: noteToCopy.cintillos,
+          createdAt: noteToCopy.createdAt,
+          containerId: containerId,
+          originalNoteId: noteToCopy._id,
+          reviewed: noteToCopy.reviewed,
+          createdBy: noteToCopy.createdBy,
+        }
+      : { containerId };
+
+    const url = itemType === 'Note'
+      ? `${switch_url}/api/containers/${containerId}/notes`
+      : `${switch_url}/api/containers/${containerId}/cortes`;
+
     axios.post(url, newNote)
       .then(response => {
-        const addedNote = response.data;
-        console.log(`${itemType} added successfully:`, addedNote);
+        const added = response.data;
         setSecondaryContainers(prevContainers => {
-          const updatedContainers = prevContainers.map(container => {
-            if (container._id === containerId) {
-              const newItems = [...container.items];
-              newItems.splice(dropIndex, 0, { type: itemType, item: addedNote });
-  
-              const reorderedItems = newItems.map((item, index) => ({
-                ...item,
-                item: { ...item.item, order: index }
-              }));
-  
-              axios.patch(`${switch_url}/api/containers/${containerId}/reorder`, { items: reorderedItems })
-                .then(response => {
-                  console.log('Items reordered successfully in database', response.data);
-                })
-                .catch(error => {
-                  console.error('Error reordering items in database:', error);
-                });
-  
-              return { ...container, items: reorderedItems };
-            }
-            return container;
+          const next = prevContainers.map(container => {
+            if (container._id !== containerId) return container;
+
+            const items = Array.isArray(container.items) ? [...container.items] : [];
+            const safeIndex = clampIndex(dropIndex, items.length);
+            items.splice(safeIndex, 0, { type: itemType, item: added });
+
+            // Consistencia: order top-level
+            const reordered = items.map((it, idx) => ({ ...it, order: idx }));
+
+            // Persistir orden (best-effort, no bloquea UI)
+            axios.patch(`${switch_url}/api/containers/${containerId}/reorder`, { items: reordered })
+              .then(res => console.log('Items reordered successfully in database', res.data))
+              .catch(err => console.error('Error reordering items in database:', err));
+
+            return sanitizeContainer({ ...container, items: reordered });
           });
-          return updatedContainers;
+          return next;
         });
+
         toast.success(`${itemType} added successfully`);
       })
       .catch(error => {
@@ -339,16 +351,14 @@ const MainPage = ({ onLogout, user, socket }) => {
         toast.error(`Error adding ${itemType}`);
       });
   };
-  
-  
-  
+
   const handleDeleteContainer = (containerId) => {
     const confirmation = window.confirm("¿Estás seguro de que deseas eliminar este contenedor?");
     if (!confirmation) return;
 
     axios.delete(`${switch_url}/api/containers/${containerId}`)
       .then(() => {
-        setSecondaryContainers(secondaryContainers.filter(container => container._id !== containerId));
+        setSecondaryContainers(prev => prev.filter(container => container._id !== containerId));
         loadNotes();
         toast.success('Guion eliminado correctamente');
       })
@@ -379,7 +389,7 @@ const MainPage = ({ onLogout, user, socket }) => {
 
   const handleContainerSelect = (containerId) => {
     setSelectedContainerId(containerId);
-    console.log("Selected container ID:", selectedContainerId);
+    console.log("Selected container ID:", containerId);
   };
 
   const handleEditContainerName = (id, newName) => {
@@ -414,7 +424,7 @@ const MainPage = ({ onLogout, user, socket }) => {
           <DropdownMenu onLogout={onLogout} user={user} />
         </div>
       </header>
-  
+
       <div className="header-buttons">
         <button onClick={handleCreateNote} className="create-button">
           <i className="fas fa-plus"></i> Crear Nota
@@ -425,100 +435,4 @@ const MainPage = ({ onLogout, user, socket }) => {
         <button onClick={handleSearchButtonClick} className="search-button">
           <i className="fas fa-search"></i>
         </button>
-        <button onClick={() => setShowDateInputs(!showDateInputs)} className="calendar-button">
-          <i className="fas fa-calendar-alt"></i>
-        </button>
-      </div>
-  
-      {showSearchInput && (
-        <input
-          type="text"
-          ref={searchInputRef}
-          placeholder="Buscar notas..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="search-input"
-        />
-      )}
-      {showDateInputs && (
-        <div className="date-filters">
-          <div className="date-filter">
-            <label>
-              Fecha Inicio
-              <input
-                type="date"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-                placeholder="Fecha de inicio"
-              />
-            </label>
-          </div>
-          <div className="date-filter">
-            <label>
-              Fecha Final
-              <input
-                type="date"
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-                placeholder="Fecha de fin"
-              />
-            </label>
-          </div>
-        </div>
-      )}
-  
-      <section className="content">
-        <div className="containers-wrapper">
-          <MainContainer 
-            notes={filteredNotes} 
-            onEdit={handleEdit} 
-            onView={handleView}
-            onDelete={deleteNote}
-            onDropNote={onDropNote} 
-            onReorderItem={onReorderItem} 
-          />
-          {secondaryContainers.map(container => (
-            <div key={container._id} onClick={(event) => handleClick(event, container._id)}>
-              <SecondaryContainer
-                id={container._id}
-                name={container.name}
-                items={container.items}
-                onDropNote={onDropNote} 
-                onReorderItem={onReorderItem}
-                onDeleteContainer={handleDeleteContainer}
-                onEdit={handleEdit}
-                onView={handleView}
-                onDelete={(noteId) => deleteNote(noteId, container._id)}
-                onSelect={handleContainerSelect}
-                onAddCorte={handleCreateCorte}
-                deleteNote={deleteNote} 
-                deleteCorte={deleteCorte}
-                onEditContainerName={handleEditContainerName} 
-              />
-            </div>
-          ))}
-        </div>
-      </section>
-  
-      {showModal && (
-        <ModalWrapper show={showModal} onClose={() => setShowModal(false)}>
-          <NoteForm 
-            note={currentNote} 
-            mode={mode} 
-            onSave={handleSaveNote} 
-            onCancel={() => setShowModal(false)} 
-            reloadContainers={loadContainers}
-            user={user}
-          />
-        </ModalWrapper>
-      )}
-      {showNewContainerModal && (
-        <ModalWrapper show={showNewContainerModal} onClose={() => setShowNewContainerModal(false)}>
-          <NewContainerForm onAddContainer={handleAddContainer} />
-        </ModalWrapper>
-      )}
-    </div>
-  );
-};
-
-export default MainPage;
+        <button onClick={() => setShowDateInputs(
