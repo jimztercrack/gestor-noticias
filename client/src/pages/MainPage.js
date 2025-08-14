@@ -22,7 +22,6 @@ const sanitizeContainer = (c = {}) => {
   const clean = items
     .filter(e => e && e.type && e.item && e.item._id) // quita nulos/corruptos
     .sort((a, b) => {
-      // si no hay order, fallback por estabilidad
       const ao = Number.isFinite(a.order) ? a.order : 0;
       const bo = Number.isFinite(b.order) ? b.order : 0;
       return ao - bo;
@@ -42,7 +41,7 @@ const sanitizeAll = (arr = []) => (Array.isArray(arr) ? arr.map(sanitizeContaine
 const MainPage = ({ onLogout, user, socket }) => {
   const [showModal, setShowModal] = useState(false);
   const [currentNote, setCurrentNote] = useState(null);
-  const [mode, setMode] = useState("");
+  const [mode, setMode] = useState('');
   const [notes, setNotes] = useState([]);
   const [filteredNotes, setFilteredNotes] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -60,10 +59,10 @@ const MainPage = ({ onLogout, user, socket }) => {
     let filtered = notes;
 
     if (searchTerm) {
-      const lowercasedTerm = searchTerm.toLowerCase();
+      const lower = searchTerm.toLowerCase();
       filtered = filtered.filter(note =>
-        (note.titulo || '').toLowerCase().includes(lowercasedTerm) ||
-        (note.contenido || '').toLowerCase().includes(lowercasedTerm)
+        (note.titulo || '').toLowerCase().includes(lower) ||
+        (note.contenido || '').toLowerCase().includes(lower)
       );
     }
 
@@ -88,13 +87,14 @@ const MainPage = ({ onLogout, user, socket }) => {
     loadNotes();
     loadContainers();
 
-    socket.on('noteUpdated', () => {
-      loadNotes();
-      loadContainers();
-    });
-
+    if (socket?.on) {
+      socket.on('noteUpdated', () => {
+        loadNotes();
+        loadContainers();
+      });
+    }
     return () => {
-      socket.off('noteUpdated');
+      if (socket?.off) socket.off('noteUpdated');
     };
   }, [socket]);
 
@@ -105,13 +105,12 @@ const MainPage = ({ onLogout, user, socket }) => {
   const loadNotes = () => {
     axios.get(`${switch_url}/api/notas`)
       .then(response => {
-        const fetchedNotes = (response.data || [])
-          .filter(note => !note.containerId);
+        const fetchedNotes = (response.data || []).filter(n => !n.containerId);
         fetchedNotes.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
         setNotes(fetchedNotes);
         setFilteredNotes(fetchedNotes);
       })
-      .catch(error => console.error('Error al obtener las notas:', error));
+      .catch(err => console.error('Error al obtener las notas:', err));
   };
 
   const loadContainers = () => {
@@ -120,50 +119,40 @@ const MainPage = ({ onLogout, user, socket }) => {
         const clean = sanitizeAll(response.data || []);
         setSecondaryContainers(clean);
       })
-      .catch(error => console.error('Error al obtener los contenedores:', error));
+      .catch(err => console.error('Error al obtener los contenedores:', err));
   };
 
   const handleEdit = (note) => {
     setCurrentNote(note);
-    setMode("edit");
+    setMode('edit');
     setShowModal(true);
   };
 
   const handleView = (note) => {
     setCurrentNote(note);
-    setMode("view");
+    setMode('view');
     setShowModal(true);
   };
 
   const handleSaveNote = (updatedOrNewNote, isNew = false) => {
     if (isNew) {
-      setNotes((prevNotes) => [updatedOrNewNote, ...prevNotes]);
-      setFilteredNotes((prevNotes) => [updatedOrNewNote, ...prevNotes]);
+      setNotes(prev => [updatedOrNewNote, ...prev]);
+      setFilteredNotes(prev => [updatedOrNewNote, ...prev]);
       loadContainers();
       loadNotes();
     } else {
       const noteId = updatedOrNewNote?._id;
-
       if (!noteId) {
         console.error('noteId es undefined');
         toast.error('Error: El ID de la nota es undefined');
         return;
       }
 
-      setNotes((prevNotes) =>
-        prevNotes.map((note) =>
-          note._id === noteId || note.originalNoteId === noteId
-            ? updatedOrNewNote
-            : note
-        )
+      setNotes(prev =>
+        prev.map(n => (n._id === noteId || n.originalNoteId === noteId) ? updatedOrNewNote : n)
       );
-
-      setFilteredNotes((prevFilteredNotes) =>
-        prevFilteredNotes.map((note) =>
-          note._id === noteId || note.originalNoteId === noteId
-            ? updatedOrNewNote
-            : note
-        )
+      setFilteredNotes(prev =>
+        prev.map(n => (n._id === noteId || n.originalNoteId === noteId) ? updatedOrNewNote : n)
       );
 
       loadContainers();
@@ -176,12 +165,12 @@ const MainPage = ({ onLogout, user, socket }) => {
 
   const handleCreateNote = () => {
     setCurrentNote(null);
-    setMode("create");
+    setMode('create');
     setShowModal(true);
   };
 
   const deleteNote = (id, containerId = null) => {
-    const confirmation = window.confirm("¿Estás seguro de que deseas eliminar esta nota?");
+    const confirmation = window.confirm('¿Estás seguro de que deseas eliminar esta nota?');
     if (!confirmation) return;
 
     if (containerId) {
@@ -191,18 +180,18 @@ const MainPage = ({ onLogout, user, socket }) => {
           loadNotes();
           toast.success('Nota eliminada correctamente');
         })
-        .catch(error => {
-          console.error('Error al eliminar la nota:', error);
+        .catch(err => {
+          console.error('Error al eliminar la nota:', err);
           toast.error('Error al eliminar la nota');
         });
     } else {
       axios.delete(`${switch_url}/api/notas/${id}`)
         .then(() => {
-          setNotes(prev => prev.filter(note => note._id !== id));
+          setNotes(prev => prev.filter(n => n._id !== id));
           toast.success('Nota eliminada correctamente');
         })
-        .catch(error => {
-          console.error('Error al eliminar la nota:', error);
+        .catch(err => {
+          console.error('Error al eliminar la nota:', err);
           toast.error('Error al eliminar la nota');
         });
     }
@@ -215,8 +204,8 @@ const MainPage = ({ onLogout, user, socket }) => {
         setShowNewContainerModal(false);
         toast.success('Guion creado correctamente');
       })
-      .catch(error => {
-        console.error('Error al crear el Guion:', error);
+      .catch(err => {
+        console.error('Error al crear el Guion:', err);
         toast.error('Error al crear el Guion');
       });
   };
@@ -229,8 +218,8 @@ const MainPage = ({ onLogout, user, socket }) => {
     axios.post(`${switch_url}/api/cortes`, { containerId })
       .then(response => {
         const newCorte = response.data;
-        setSecondaryContainers(prevContainers => {
-          const next = prevContainers.map(container => {
+        setSecondaryContainers(prev => {
+          const next = prev.map(container => {
             if (container._id === containerId) {
               const items = Array.isArray(container.items) ? [...container.items] : [];
               items.push({ type: 'Corte', item: newCorte, order: items.length });
@@ -241,8 +230,8 @@ const MainPage = ({ onLogout, user, socket }) => {
           return next;
         });
       })
-      .catch(error => {
-        console.error('Error al crear el corte:', error);
+      .catch(err => {
+        console.error('Error al crear el corte:', err);
         toast.error('Error al crear el corte');
       });
   };
@@ -256,24 +245,23 @@ const MainPage = ({ onLogout, user, socket }) => {
   const onReorderItem = useCallback((itemId, containerId, newIndex, itemType) => {
     if (!containerId) return;
 
-    setSecondaryContainers(prevContainers => {
-      const ci = prevContainers.findIndex(c => c._id === containerId);
-      if (ci === -1) return prevContainers;
+    setSecondaryContainers(prev => {
+      const ci = prev.findIndex(c => c._id === containerId);
+      if (ci === -1) return prev;
 
-      const container = prevContainers[ci];
+      const container = prev[ci];
       const items = Array.isArray(container.items) ? [...container.items] : [];
 
       const from = items.findIndex(x => x && x.type === itemType && x.item && x.item._id === itemId);
-      if (from === -1) return prevContainers;
+      if (from === -1) return prev;
 
       const [moved] = items.splice(from, 1);
-      if (!moved || !moved.item) return prevContainers;
+      if (!moved || !moved.item) return prev;
 
       const safeIndex = clampIndex(newIndex, items.length); // después de remover
       items.splice(safeIndex, 0, moved);
 
       const reorderedItems = items.map((it, idx) => ({ ...it, order: idx }));
-
       const updatedContainer = sanitizeContainer({ ...container, items: reorderedItems });
 
       clearTimeout(window.reorderTimeout);
@@ -284,9 +272,9 @@ const MainPage = ({ onLogout, user, socket }) => {
       }, 300);
 
       return [
-        ...prevContainers.slice(0, ci),
+        ...prev.slice(0, ci),
         updatedContainer,
-        ...prevContainers.slice(ci + 1),
+        ...prev.slice(ci + 1),
       ];
     });
   }, []);
@@ -297,7 +285,7 @@ const MainPage = ({ onLogout, user, socket }) => {
       return;
     }
 
-    const noteToCopy = itemType === 'Note' ? notes.find(note => note._id === noteId) : null;
+    const noteToCopy = itemType === 'Note' ? notes.find(n => n._id === noteId) : null;
     if (itemType === 'Note' && !noteToCopy) {
       console.log(`${itemType} not found for ID:`, noteId);
       return;
@@ -323,18 +311,16 @@ const MainPage = ({ onLogout, user, socket }) => {
     axios.post(url, newNote)
       .then(response => {
         const added = response.data;
-        setSecondaryContainers(prevContainers => {
-          const next = prevContainers.map(container => {
+        setSecondaryContainers(prev => {
+          const next = prev.map(container => {
             if (container._id !== containerId) return container;
 
             const items = Array.isArray(container.items) ? [...container.items] : [];
             const safeIndex = clampIndex(dropIndex, items.length);
             items.splice(safeIndex, 0, { type: itemType, item: added });
 
-            // Consistencia: order top-level
             const reordered = items.map((it, idx) => ({ ...it, order: idx }));
 
-            // Persistir orden (best-effort, no bloquea UI)
             axios.patch(`${switch_url}/api/containers/${containerId}/reorder`, { items: reordered })
               .then(res => console.log('Items reordered successfully in database', res.data))
               .catch(err => console.error('Error reordering items in database:', err));
@@ -346,30 +332,30 @@ const MainPage = ({ onLogout, user, socket }) => {
 
         toast.success(`${itemType} added successfully`);
       })
-      .catch(error => {
-        console.error(`Error adding ${itemType}:`, error);
+      .catch(err => {
+        console.error(`Error adding ${itemType}:`, err);
         toast.error(`Error adding ${itemType}`);
       });
   };
 
   const handleDeleteContainer = (containerId) => {
-    const confirmation = window.confirm("¿Estás seguro de que deseas eliminar este contenedor?");
+    const confirmation = window.confirm('¿Estás seguro de que deseas eliminar este contenedor?');
     if (!confirmation) return;
 
     axios.delete(`${switch_url}/api/containers/${containerId}`)
       .then(() => {
-        setSecondaryContainers(prev => prev.filter(container => container._id !== containerId));
+        setSecondaryContainers(prev => prev.filter(c => c._id !== containerId));
         loadNotes();
         toast.success('Guion eliminado correctamente');
       })
-      .catch(error => {
-        console.error('Error al eliminar el guion:', error);
+      .catch(err => {
+        console.error('Error al eliminar el guion:', err);
         toast.error('Error al eliminar el guion');
       });
   };
 
   const deleteCorte = (corteId, containerId) => {
-    const confirmation = window.confirm("¿Estás seguro de que deseas eliminar este corte?");
+    const confirmation = window.confirm('¿Estás seguro de que deseas eliminar este corte?');
     if (!confirmation) return;
 
     axios.delete(`${switch_url}/api/containers/${containerId}/cortes/${corteId}`)
@@ -377,8 +363,8 @@ const MainPage = ({ onLogout, user, socket }) => {
         loadContainers();
         toast.success('Corte eliminado correctamente');
       })
-      .catch(error => {
-        console.error('Error al eliminar el corte:', error);
+      .catch(err => {
+        console.error('Error al eliminar el corte:', err);
         toast.error('Error al eliminar el corte');
       });
   };
@@ -389,14 +375,12 @@ const MainPage = ({ onLogout, user, socket }) => {
 
   const handleContainerSelect = (containerId) => {
     setSelectedContainerId(containerId);
-    console.log("Selected container ID:", containerId);
+    console.log('Selected container ID:', containerId);
   };
 
   const handleEditContainerName = (id, newName) => {
-    setSecondaryContainers(prevContainers =>
-      prevContainers.map(container =>
-        container._id === id ? { ...container, name: newName } : container
-      )
+    setSecondaryContainers(prev =>
+      prev.map(c => (c._id === id ? { ...c, name: newName } : c))
     );
   };
 
@@ -404,9 +388,7 @@ const MainPage = ({ onLogout, user, socket }) => {
     setShowSearchInput(!showSearchInput);
     if (!showSearchInput) {
       setTimeout(() => {
-        if (searchInputRef.current) {
-          searchInputRef.current.focus();
-        }
+        searchInputRef.current?.focus();
       }, 0);
     }
   };
@@ -435,4 +417,103 @@ const MainPage = ({ onLogout, user, socket }) => {
         <button onClick={handleSearchButtonClick} className="search-button">
           <i className="fas fa-search"></i>
         </button>
-        <button onClick={() => setShowDateInputs(
+        <button onClick={() => setShowDateInputs(!showDateInputs)} className="calendar-button">
+          <i className="fas fa-calendar-alt"></i>
+        </button>
+      </div>
+
+      {showSearchInput && (
+        <input
+          type="text"
+          ref={searchInputRef}
+          placeholder="Buscar notas..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="search-input"
+        />
+      )}
+
+      {showDateInputs && (
+        <div className="date-filters">
+          <div className="date-filter">
+            <label>
+              Fecha Inicio
+              <input
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                placeholder="Fecha de inicio"
+              />
+            </label>
+          </div>
+          <div className="date-filter">
+            <label>
+              Fecha Final
+              <input
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                placeholder="Fecha de fin"
+              />
+            </label>
+          </div>
+        </div>
+      )}
+
+      <section className="content">
+        <div className="containers-wrapper">
+          <MainContainer
+            notes={filteredNotes}
+            onEdit={handleEdit}
+            onView={handleView}
+            onDelete={deleteNote}
+            onDropNote={onDropNote}
+            onReorderItem={onReorderItem}
+          />
+
+          {secondaryContainers.map(container => (
+            <div key={container._id} onClick={(event) => handleClick(event, container._id)}>
+              <SecondaryContainer
+                id={container._id}
+                name={container.name}
+                items={(container.items || []).filter(e => e && e.item && e.item._id)}
+                onDropNote={onDropNote}
+                onReorderItem={onReorderItem}
+                onDeleteContainer={handleDeleteContainer}
+                onEdit={handleEdit}
+                onView={handleView}
+                onDelete={(noteId) => deleteNote(noteId, container._id)}
+                onSelect={handleContainerSelect}
+                onAddCorte={handleCreateCorte}
+                deleteNote={deleteNote}
+                deleteCorte={deleteCorte}
+                onEditContainerName={handleEditContainerName}
+              />
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {showModal && (
+        <ModalWrapper show={showModal} onClose={() => setShowModal(false)}>
+          <NoteForm
+            note={currentNote}
+            mode={mode}
+            onSave={handleSaveNote}
+            onCancel={() => setShowModal(false)}
+            reloadContainers={loadContainers}
+            user={user}
+          />
+        </ModalWrapper>
+      )}
+
+      {showNewContainerModal && (
+        <ModalWrapper show={showNewContainerModal} onClose={() => setShowNewContainerModal(false)}>
+          <NewContainerForm onAddContainer={handleAddContainer} />
+        </ModalWrapper>
+      )}
+    </div>
+  );
+};
+
+export default MainPage;
