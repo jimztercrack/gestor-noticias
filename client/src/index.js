@@ -13,20 +13,38 @@ import switch_url from './switch';
 
 Modal.setAppElement('#root');
 
+// --- FIX navegador: prevenir navegación en drag & drop a nivel global ---
+const preventDragNav = (e) => {
+  e.preventDefault();
+  e.stopPropagation();
+  try {
+    if (e.dataTransfer) e.dataTransfer.dropEffect = 'none';
+  } catch {}
+};
+window.addEventListener('dragover', preventDragNav, { capture: true, passive: false });
+window.addEventListener('drop', preventDragNav, { capture: true, passive: false });
+// ------------------------------------------------------------------------
+
 // Configuración del cliente de Socket.IO
 const socket = io(switch_url);  // Asegúrate de que esta URL coincide con la configuración del servidor
+// Opcional: evita warning si no usas 'socket' en ningún lado
+// window.__socket = socket;
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>
     <DndProvider backend={HTML5Backend}>
-      <App />
-      <ToastContainer autoClose={1500}/>    
+      {/* Wrapper que también bloquea drag/drop por si cae dentro del árbol React */}
+      <div
+        onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
+        onDrop={(e) => { e.preventDefault(); e.stopPropagation(); }}
+        style={{ height: '100%' }}
+      >
+        <App />
+        <ToastContainer autoClose={1500} />
+      </div>
     </DndProvider>
   </React.StrictMode>
 );
 
-// If you want to start measuring performance in your app, pass a function
-// to log results (for example: reportWebVitals(console.log))
-// or send to an analytics endpoint. Learn more: https://bit.ly/CRA-vitals
 reportWebVitals();
