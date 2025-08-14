@@ -13,8 +13,21 @@ import switch_url from './switch';
 
 Modal.setAppElement('#root');
 
+// --- FIX: prevenir navegación del navegador en drag/drop global ---
+const prevent = (e) => {
+  // Si estás usando uploads por drop en algún lugar, quita este prevent
+  // o cambia la condición para permitir drop en targets específicos.
+  e.preventDefault();
+};
+window.addEventListener('dragover', prevent);
+window.addEventListener('drop', prevent);
+// ------------------------------------------------------------------
+
 // Configuración del cliente de Socket.IO
+// (si no usas 'socket' en ningún sitio, podrías comentar esta línea para evitar warning)
 const socket = io(switch_url);  // Asegúrate de que esta URL coincide con la configuración del servidor
+// opcional: usarlo para evitar warning de variable no usada
+// window.__socket = socket;
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
@@ -26,7 +39,4 @@ root.render(
   </React.StrictMode>
 );
 
-// If you want to start measuring performance in your app, pass a function
-// to log results (for example: reportWebVitals(console.log))
-// or send to an analytics endpoint. Learn more: https://bit.ly/CRA-vitals
 reportWebVitals();
